@@ -1,0 +1,60 @@
+{
+    "pages": [
+        {
+            "path": "pages/record-list/index",
+            "style": {
+                "navigationBarTitleText": "谈话记录"
+            }
+        },
+        {
+            "path": "pages/record-add/index",
+            "style": {
+                "navigationBarTitleText": "新增记录"
+            }
+        },
+        {
+            "path": "pages/record-detail/index",
+            "style": {
+                "navigationBarTitleText": "记录详情"
+            }
+        },
+        {
+            "path": "pages/quick-tag/index",
+            "style": {
+                "navigationBarTitleText": "快捷标签"
+            }
+        }
+    ],
+    "globalStyle": {
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "谈话记录",
+        "navigationBarBackgroundColor": "#F8F8F8",
+        "backgroundColor": "#F8F8F8"
+    },
+    "tabBar": {
+        "color": "#999999",
+        "selectedColor": "#007AFF",
+        "backgroundColor": "#ffffff",
+        "borderStyle": "black",
+        "list": [
+            {
+                "pagePath": "pages/record-list/index",
+                "text": "记录列表",
+                "iconPath": "static/tabbar/list.png",
+                "selectedIconPath": "static/tabbar/list-active.png"
+            },
+            {
+                "pagePath": "pages/record-add/index",
+                "text": "新增记录",
+                "iconPath": "static/tabbar/add.png",
+                "selectedIconPath": "static/tabbar/add-active.png"
+            },
+            {
+                "pagePath": "pages/quick-tag/index",
+                "text": "快捷标签",
+                "iconPath": "static/tabbar/tag.png",
+                "selectedIconPath": "static/tabbar/tag-active.png"
+            }
+        ]
+    }
+}

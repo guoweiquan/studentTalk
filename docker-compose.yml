@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: talk-record-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: talk_record
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: talk-record-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://app:app123456@mysql:3306/talk_record
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

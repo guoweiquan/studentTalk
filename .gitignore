@@ -1,0 +1,144 @@
+# ===================== 通用排除规则（所有项目必加）=====================
+# 编译/构建产物目录
+dist/
+build/
+out/
+target/
+bin/
+obj/
+# 临时/缓存文件
+*.log
+*.cache
+*.tmp
+*.swp
+*.swo
+.DS_Store  # Mac系统自动生成文件
+Thumbs.db  # Windows系统自动生成文件
+# IDE/编辑器配置文件（避免上传个性化设置）
+.idea/
+.vscode/
+*.sublime-*
+*.project
+*.classpath
+*.settings/
+# 环境变量与敏感文件（含密钥、密码，严禁上传）
+.env
+.env.*
+!.env.example  # 保留示例文件（可选）
+*.pem
+*.key
+*.cert
+# 数据库文件
+*.db
+*.sql
+*.sqlite
+*.db-journal
+
+# ===================== 按开发语言/框架补充（按需删减）=====================
+# 1. Node.js/前端项目
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/  # 测试覆盖率报告
+.eslintcache
+.prettiercache
+# 前端构建临时文件
+.tmp/
+.nuxt/
+.next/
+.gatsby/
+.vuepress/dist/
+
+# 2. Python项目
+venv/
+env/
+ENV/
+*.py[cod]
+__pycache__/
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+requirements.txt  # 若用Pipfile，可排除；否则保留
+ Pipfile.lock
+
+# 3. Java项目
+*.class
+*.jar
+*.war
+*.ear
+*.javac
+.mvn/
+mvnw
+mvnw.cmd
+dependency-reduced-pom.xml
+
+# 4. PHP项目
+vendor/
+composer.lock
+composer.phar
+*.php~
+.phpstorm.meta.php
+# Laravel框架额外补充
+storage/
+bootstrap/cache/
+
+# 5. Go项目
+vendor/
+go.mod
+go.sum
+*.exe
+*.dll
+*.so
+*.a
+# Go模块缓存
+$GOPATH/pkg/mod/
+
+# 6. C#/.NET项目
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.suo
+*.user
+*.sln.docstates
+
+# 7. Ruby项目
+Gemfile.lock
+vendor/
+log/
+tmp/
+
+# 8. Swift/Objective-C（iOS项目）
+Pods/
+Carthage/
+DerivedData/
+*.xcworkspace/
+*.xcuserdata/
+*.ipa
+*.dSYM.zip
+
+# 9. Android项目
+.gradle/
+build/
+*.apk
+*.aar
+*.ap_
+*.dex
+*.class
+local.properties
+*.iml
+
+# ===================== 其他场景补充 =====================
+# 包管理文件（避免重复上传）
+*.tar.gz
+*.tar.bz2
+*.zip
+*.rar
+# 版本控制临时文件
+.git/  # 本身就是Git仓库目录，无需上传
+.gitignore  # 自身无需排除，已纳入版本控制

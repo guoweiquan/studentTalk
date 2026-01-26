@@ -1,0 +1,63 @@
+// Prisma 数据库模型定义
+// 老师-学生谈话记录小程序
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 谈话记录表
+model TalkRecord {
+  id               Int       @id @default(autoincrement())
+  studentName      String    @map("student_name") @db.VarChar(50)
+  className        String    @map("class_name") @db.VarChar(50)
+  studentNo        String    @map("student_no") @db.VarChar(50)
+  talkTime         DateTime  @map("talk_time")
+  talkPlace        String    @map("talk_place") @db.VarChar(100)
+  participants     String    @db.VarChar(200)
+  reason           String    @db.VarChar(200)
+  rawText          String    @map("raw_text") @db.Text
+  formData         Json      @map("form_data")
+  tags             Json?
+  riskLevel        Int       @default(1) @map("risk_level") @db.TinyInt
+  followupDate     DateTime? @map("followup_date") @db.Date
+  generatedContent String?   @map("generated_content") @db.Text
+  recordDate       DateTime  @map("record_date") @db.Date
+  createTime       DateTime  @default(now()) @map("create_time")
+  updateTime       DateTime  @updatedAt @map("update_time")
+
+  @@index([studentName], map: "idx_student_name")
+  @@index([recordDate], map: "idx_record_date")
+  @@map("talk_record")
+}
+
+// 快捷标签类别表（主表）
+model QuickTag {
+  id           Int              @id @default(autoincrement())
+  categoryCode String           @unique @map("category_code") @db.VarChar(50)
+  categoryName String           @map("category_name") @db.VarChar(100)
+  sortOrder    Int              @default(0) @map("sort_order")
+  createTime   DateTime         @default(now()) @map("create_time")
+  updateTime   DateTime         @updatedAt @map("update_time")
+  details      QuickTagDetail[]
+
+  @@map("quick_tag")
+}
+
+// 快捷标签明细表
+model QuickTagDetail {
+  id         Int      @id @default(autoincrement())
+  tagId      Int      @map("tag_id")
+  tagValue   String   @map("tag_value") @db.VarChar(200)
+  isActive   Int      @default(1) @map("is_active") @db.TinyInt
+  sortOrder  Int      @default(0) @map("sort_order")
+  createTime DateTime @default(now()) @map("create_time")
+  quickTag   QuickTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([tagId], map: "idx_tag_id")
+  @@map("quick_tag_detail")
+}
