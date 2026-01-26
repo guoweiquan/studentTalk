@@ -64,7 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { getRecordList, type TalkRecord } from '@/api/index';
 
 // 状态
@@ -88,11 +89,15 @@ async function fetchRecords(isRefresh = false) {
       hasMore.value = true;
     }
     
+    console.log('正在请求记录列表...', { page: page.value, size, name: searchName.value });
+    
     const res = await getRecordList({
       page: page.value,
       size,
       name: searchName.value || undefined,
     });
+    
+    console.log('获取记录列表成功:', res);
     
     const list = res.data.list;
     
@@ -105,6 +110,7 @@ async function fetchRecords(isRefresh = false) {
     hasMore.value = page.value < res.data.totalPages;
   } catch (error) {
     console.error('获取记录失败:', error);
+    uni.showToast({ title: '加载失败，请下拉刷新', icon: 'none' });
   } finally {
     loading.value = false;
     isRefreshing.value = false;
@@ -164,14 +170,23 @@ function getRiskLabel(level: number): string {
   return labels[level] || '未知';
 }
 
-// 页面加载
-onMounted(() => {
+// 页面显示时加载数据（每次切换到此页面都会触发）
+onShow(() => {
+  console.log('记录列表页面 onShow 触发');
   fetchRecords(true);
 });
 
-// 页面显示时刷新（从详情页返回后）
-uni.$on('refreshRecordList', () => {
+// 监听从新增页面发来的刷新事件
+const refreshHandler = () => {
   fetchRecords(true);
+};
+
+onMounted(() => {
+  uni.$on('refreshRecordList', refreshHandler);
+});
+
+onUnmounted(() => {
+  uni.$off('refreshRecordList', refreshHandler);
 });
 </script>
 

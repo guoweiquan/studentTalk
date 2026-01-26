@@ -1,7 +1,9 @@
 // API 配置和请求封装
 
 // API 基础路径
-const BASE_URL = 'http://localhost:3000/api/v1';
+// 本地开发环境使用本机 IP（微信小程序模拟器无法识别 localhost）
+// H5 开发可以使用 localhost，小程序必须使用 IP 地址
+const BASE_URL = 'http://192.168.0.101:3000/api/v1';
 
 // 通用响应类型
 interface ApiResponse<T = unknown> {
@@ -102,12 +104,14 @@ export interface CreateRecordRequest {
 
 // 获取记录列表
 export function getRecordList(params: { page?: number; size?: number; name?: string }) {
-    const query = new URLSearchParams();
-    if (params.page) query.append('page', String(params.page));
-    if (params.size) query.append('size', String(params.size));
-    if (params.name) query.append('name', params.name);
+    // 手动构建查询字符串（URLSearchParams 在小程序环境不可用）
+    const queryParts: string[] = [];
+    if (params.page) queryParts.push(`page=${params.page}`);
+    if (params.size) queryParts.push(`size=${params.size}`);
+    if (params.name) queryParts.push(`name=${encodeURIComponent(params.name)}`);
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
-    return request<PaginatedData<TalkRecord>>(`/record?${query.toString()}`, {
+    return request<PaginatedData<TalkRecord>>(`/record${queryString}`, {
         method: 'GET',
     });
 }
