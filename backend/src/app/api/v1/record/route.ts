@@ -1,6 +1,11 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { success, error, paginatedSuccess } from '@/lib/response';
+import { success, error, paginatedSuccess, options } from '@/lib/response';
+
+// OPTIONS - 处理 CORS 预检请求
+export async function OPTIONS() {
+    return options();
+}
 
 // 创建记录请求体类型
 interface CreateRecordBody {

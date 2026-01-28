@@ -3,7 +3,9 @@
 // API 基础路径
 // 本地开发环境使用本机 IP（微信小程序模拟器无法识别 localhost）
 // H5 开发可以使用 localhost，小程序必须使用 IP 地址
-const BASE_URL = 'http://192.168.0.101:3000/api/v1';
+const BASE_URL = 'http://192.168.0.103:3000/api/v1';
+// 外网访问时使用 cpolar 地址（需要 cpolar 隧道正在运行）
+//const BASE_URL = 'https://4cf78f5.r28.cpolar.top/api/v1';
 
 // 通用响应类型
 interface ApiResponse<T = unknown> {

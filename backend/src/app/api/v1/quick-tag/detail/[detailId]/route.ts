@@ -1,6 +1,11 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { success, error } from '@/lib/response';
+import { success, error, options } from '@/lib/response';
+
+// OPTIONS - 处理 CORS 预检请求
+export async function OPTIONS() {
+    return options();
+}
 
 interface RouteParams {
     params: Promise<{ detailId: string }>;

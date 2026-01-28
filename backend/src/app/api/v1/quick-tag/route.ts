@@ -1,5 +1,10 @@
 import prisma from '@/lib/prisma';
-import { success, error } from '@/lib/response';
+import { success, error, options } from '@/lib/response';
+
+// OPTIONS - 处理 CORS 预检请求
+export async function OPTIONS() {
+    return options();
+}
 
 // GET /api/v1/quick-tag - 获取所有类别及其明细
 export async function GET() {
