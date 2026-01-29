@@ -69,17 +69,16 @@ export interface TalkRecord {
     talk_place: string;
     participants: string;
     reason: string;
-    raw_text: string;
     form_data: {
-        key_facts?: string;
-        attitude?: string;
+        student_behavior?: string;
         analysis?: string;
-        measures?: string;
-        followup_plan?: string;
+        result?: string;
     };
     tags?: string[];
     risk_level: number;
-    followup_date?: string;
+    talk_content?: string;
+    situation_analysis?: string;
+    disposal_result?: string;
     generated_content?: string;
     record_date: string;
     create_time: string;
@@ -95,11 +94,12 @@ export interface CreateRecordRequest {
     talk_place: string;
     participants: string;
     reason: string;
-    raw_text: string;
     form_data: Record<string, string>;
     tags?: string[];
     risk_level?: number;
-    followup_date?: string;
+    talk_content?: string;
+    situation_analysis?: string;
+    disposal_result?: string;
     generated_content?: string;
     record_date: string;
 }
@@ -151,9 +151,14 @@ export function deleteRecord(id: number) {
 export interface TagDetail {
     id: number;
     tag_value: string;
+    tag_type: string;
     is_active: number;
     sort_order: number;
 }
+
+// 标签类型常量
+export const TAG_TYPES = ['学业', '违纪', '心理', '宿舍'] as const;
+export type TagType = typeof TAG_TYPES[number];
 
 // 标签类别类型
 export interface QuickTag {
@@ -179,7 +184,7 @@ export function getTagDetails(tagId: number) {
 }
 
 // 添加标签明细
-export function addTagDetail(tagId: number, tagValue: string) {
+export function addTagDetail(tagId: number, tagValue: string, tagType: string = '学业') {
     return request<TagDetail>(`/quick-tag/${tagId}/detail`, {
         method: 'POST',
         header: {
@@ -187,6 +192,7 @@ export function addTagDetail(tagId: number, tagValue: string) {
         },
         data: {
             tag_value: tagValue,
+            tag_type: tagType,
         },
     });
 }

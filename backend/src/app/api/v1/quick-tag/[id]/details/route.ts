@@ -50,6 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             details: details.map((detail) => ({
                 id: detail.id,
                 tag_value: detail.tagValue,
+                tag_type: detail.tagType,
                 is_active: detail.isActive,
                 sort_order: detail.sortOrder,
             })),

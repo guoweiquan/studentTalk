@@ -34,6 +34,7 @@ export async function GET() {
             details: category.details.map((detail) => ({
                 id: detail.id,
                 tag_value: detail.tagValue,
+                tag_type: detail.tagType,
                 is_active: detail.isActive,
                 sort_order: detail.sortOrder,
             })),

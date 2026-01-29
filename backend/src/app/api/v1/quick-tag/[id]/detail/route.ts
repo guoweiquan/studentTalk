@@ -13,7 +13,11 @@ interface RouteParams {
 
 interface AddDetailBody {
     tag_value: string;
+    tag_type?: string;
 }
+
+// 有效的标签类型
+const VALID_TAG_TYPES = ['学业', '违纪', '心理', '宿舍'];
 
 // POST /api/v1/quick-tag/:id/detail - 添加标签明细
 export async function POST(request: NextRequest, { params }: RouteParams) {
@@ -40,16 +44,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             return error('类别不存在', 404);
         }
 
-        // 检查是否已存在相同的标签值
+        // 验证 tag_type（如果提供）
+        const tagType = body.tag_type?.trim() || '学业';
+        if (!VALID_TAG_TYPES.includes(tagType)) {
+            return error('无效的标签类型，必须是：学业、违纪、心理、宿舍', 400);
+        }
+
+        // 检查是否已存在相同的 标签值 + 标签类型 组合
+        // 同一类别下，同一标签值可以在不同类型下重复添加
         const existingDetail = await prisma.quickTagDetail.findFirst({
             where: {
                 tagId: tagId,
                 tagValue: body.tag_value.trim(),
+                tagType: tagType,
             },
         });
 
         if (existingDetail) {
-            return error('该标签已存在', 400);
+            return error(`该标签在"${tagType}"类型下已存在`, 400);
         }
 
         // 获取当前最大排序值
@@ -58,12 +70,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             orderBy: { sortOrder: 'desc' },
             select: { sortOrder: true },
         });
-
         // 创建新标签明细
         const detail = await prisma.quickTagDetail.create({
             data: {
                 tagId: tagId,
                 tagValue: body.tag_value.trim(),
+                tagType: tagType,
                 isActive: 1,
                 sortOrder: (maxSortOrder?.sortOrder || 0) + 1,
             },
@@ -74,6 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 id: detail.id,
                 tag_id: detail.tagId,
                 tag_value: detail.tagValue,
+                tag_type: detail.tagType,
                 is_active: detail.isActive,
                 sort_order: detail.sortOrder,
                 create_time: detail.createTime,

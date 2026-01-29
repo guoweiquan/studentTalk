@@ -42,16 +42,10 @@
         <text class="card-content">{{ record.reason }}</text>
       </view>
 
-      <!-- 关键事实 -->
-      <view class="card" v-if="record.form_data?.key_facts">
-        <text class="card-title">关键事实</text>
-        <text class="card-content">{{ record.form_data.key_facts }}</text>
-      </view>
-
-      <!-- 学生态度/情绪 -->
-      <view class="card" v-if="record.form_data?.attitude">
-        <text class="card-title">学生态度/情绪</text>
-        <text class="card-content">{{ record.form_data.attitude }}</text>
+      <!-- 学生表现 -->
+      <view class="card" v-if="record.form_data?.student_behavior">
+        <text class="card-title">学生表现</text>
+        <text class="card-content">{{ record.form_data.student_behavior }}</text>
       </view>
 
       <!-- 原因分析 -->
@@ -60,16 +54,16 @@
         <text class="card-content">{{ record.form_data.analysis }}</text>
       </view>
 
-      <!-- 处理与辅导措施 -->
-      <view class="card" v-if="record.form_data?.measures">
-        <text class="card-title">处理与辅导措施</text>
-        <text class="card-content">{{ record.form_data.measures }}</text>
+      <!-- 处置结果 -->
+      <view class="card" v-if="record.form_data?.result">
+        <text class="card-title">处置结果</text>
+        <text class="card-content">{{ record.form_data.result }}</text>
       </view>
 
-      <!-- 后续跟进计划 -->
-      <view class="card" v-if="record.form_data?.followup_plan">
-        <text class="card-title">后续跟进计划</text>
-        <text class="card-content">{{ record.form_data.followup_plan }}</text>
+      <!-- 谈话记录 -->
+      <view class="card" v-if="record.talk_content">
+        <text class="card-title">谈话记录</text>
+        <text class="card-content">{{ record.talk_content }}</text>
       </view>
 
       <!-- 生成的完整记录 -->
@@ -78,12 +72,6 @@
         <view class="generated-content">
           <text>{{ record.generated_content }}</text>
         </view>
-      </view>
-
-      <!-- 原始谈话片段 -->
-      <view class="card">
-        <text class="card-title">原始谈话片段</text>
-        <text class="card-content raw-text">{{ record.raw_text }}</text>
       </view>
 
       <!-- 底部占位 -->
@@ -245,11 +233,6 @@ onMounted(() => {
   font-size: 15px;
   color: #333;
   line-height: 1.6;
-}
-
-.raw-text {
-  color: #666;
-  font-size: 14px;
 }
 
 .info-row {

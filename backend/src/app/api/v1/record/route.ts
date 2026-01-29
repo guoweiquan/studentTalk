@@ -16,11 +16,12 @@ interface CreateRecordBody {
     talk_place: string;
     participants: string;
     reason: string;
-    raw_text: string;
     form_data: Record<string, unknown>;
     tags?: string[];
     risk_level?: number;
-    followup_date?: string;
+    talk_content?: string;
+    situation_analysis?: string;
+    disposal_result?: string;
     generated_content?: string;
     record_date: string;
 }
@@ -67,11 +68,12 @@ export async function GET(request: NextRequest) {
             talk_place: record.talkPlace,
             participants: record.participants,
             reason: record.reason,
-            raw_text: record.rawText,
             form_data: record.formData,
             tags: record.tags,
             risk_level: record.riskLevel,
-            followup_date: record.followupDate,
+            talk_content: record.talkContent,
+            situation_analysis: record.situationAnalysis,
+            disposal_result: record.disposalResult,
             generated_content: record.generatedContent,
             record_date: record.recordDate,
             create_time: record.createTime,
@@ -99,7 +101,6 @@ export async function POST(request: NextRequest) {
             'talk_place',
             'participants',
             'reason',
-            'raw_text',
             'form_data',
             'record_date',
         ];
@@ -120,11 +121,12 @@ export async function POST(request: NextRequest) {
                 talkPlace: body.talk_place,
                 participants: body.participants,
                 reason: body.reason,
-                rawText: body.raw_text,
-                formData: body.form_data,
+                formData: body.form_data as object,
                 tags: body.tags || [],
                 riskLevel: body.risk_level || 1,
-                followupDate: body.followup_date ? new Date(body.followup_date) : null,
+                talkContent: body.talk_content || null,
+                situationAnalysis: body.situation_analysis || null,
+                disposalResult: body.disposal_result || null,
                 generatedContent: body.generated_content || null,
                 recordDate: new Date(body.record_date),
             },
