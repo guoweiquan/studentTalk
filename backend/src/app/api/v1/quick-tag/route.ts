@@ -19,7 +19,7 @@ export async function GET() {
                         isActive: 1,
                     },
                     orderBy: {
-                        sortOrder: 'asc',
+                        sortOrder: 'desc',
                     },
                 },
             },

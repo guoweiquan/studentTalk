@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { success, error, paginatedSuccess, options } from '@/lib/response';
+import { updateTagUsageCount } from '@/lib/tagUsage';
 
 // OPTIONS - 处理 CORS 预检请求
 export async function OPTIONS() {
@@ -131,6 +132,13 @@ export async function POST(request: NextRequest) {
                 recordDate: new Date(body.record_date),
             },
         });
+
+        // 异步更新标签使用次数（不阻塞响应）
+        if (body.tags && body.tags.length > 0) {
+            updateTagUsageCount(body.tags).catch((err) => {
+                console.error('更新标签使用次数失败:', err);
+            });
+        }
 
         return success(
             {

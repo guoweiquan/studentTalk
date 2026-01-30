@@ -641,6 +641,41 @@ async function handleOcrInput(targetField: string) {
   }
 }
 
+// 重置表单
+function resetForm() {
+  // 重置基本信息
+  formData.student_name = '';
+  formData.class_name = '';
+  formData.student_no = '';
+  formData.talk_place = '';
+  formData.risk_level = 1;
+  formData.talk_content = '';
+  formData.situation_analysis = '';
+  formData.disposal_result = '';
+  
+  // 重置选中标签
+  selectedTags.participants = [];
+  selectedTags.reason = [];
+  selectedTags.attitude = [];
+  selectedTags.analysis = [];
+  selectedTags.measures = [];
+  
+  // 重置自定义输入
+  customInputs.participants = '';
+  customInputs.reason = '';
+  customInputs.attitude = '';
+  customInputs.analysis = '';
+  customInputs.measures = '';
+  
+  // 重置场景
+  selectedScene.value = '';
+  
+  // 重置日期
+  const today = new Date();
+  talkDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  formData.talk_time = talkDate.value + ' 09:00:00';
+}
+
 // 提交表单
 async function handleSubmit() {
   if (!validateForm()) return;
@@ -683,8 +718,9 @@ async function handleSubmit() {
     // 通知列表页刷新
     uni.$emit('refreshRecordList');
     
-    // 返回列表页
+    // 返回列表页并重置表单
     setTimeout(() => {
+      resetForm(); //清空表单
       uni.switchTab({ url: '/pages/record-list/index' });
     }, 1500);
   } catch (error) {

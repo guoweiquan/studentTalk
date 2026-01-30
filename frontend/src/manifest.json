@@ -6,21 +6,10 @@
     "versionCode": "100",
     "transformPx": false,
     "mp-weixin": {
-        "appid": "",
+        "appid": "wx50859f3eb540ff35",
         "setting": {
             "urlCheck": false
         },
-        "usingComponents": true,
-        "plugins": {
-            "WechatSI": {
-                "version": "0.3.5",
-                "provider": "wx069ba97219f66d99"
-            }
-        },
-        "permission": {
-            "scope.record": {
-                "desc": "用于语音输入功能，将语音转换为文字"
-            }
-        }
+        "usingComponents": true
     }
 }
