@@ -47,9 +47,14 @@
               v-for="scene in sceneOptions"
               :key="scene.value"
               :class="['scene-item', { active: selectedScene === scene.value }]"
+              :style="selectedScene === scene.value ? { borderColor: scene.color, backgroundColor: scene.color + '15', color: scene.color } : {}"
               @click="selectedScene = scene.value"
             >
-              <view :class="['scene-dot', selectedScene === scene.value ? 'active' : '']"></view>
+              <view 
+                :class="['scene-dot', selectedScene === scene.value ? 'active' : '']"
+                :style="selectedScene === scene.value ? { borderColor: scene.color } : {}"
+              ></view>
+              <text v-if="scene.icon" class="scene-icon">{{ scene.icon }}</text>
               <text>{{ scene.label }}</text>
             </view>
           </view>
@@ -82,7 +87,7 @@
             <view
               v-for="tag in getFilteredTags('reason')"
               :key="tag.id"
-              :class="['checkbox-item', { active: selectedTags.reason.includes(tag.tag_value) }]"
+              :class="['checkbox-item', 'tag-blue', { active: selectedTags.reason.includes(tag.tag_value) }]"
               @click="toggleTag('reason', tag.tag_value)"
             >
               {{ tag.tag_value }}
@@ -100,7 +105,7 @@
             <view
               v-for="tag in getFilteredTags('attitude')"
               :key="tag.id"
-              :class="['checkbox-item', { active: selectedTags.attitude.includes(tag.tag_value) }]"
+              :class="['checkbox-item', 'tag-cyan', { active: selectedTags.attitude.includes(tag.tag_value) }]"
               @click="toggleTag('attitude', tag.tag_value)"
             >
               {{ tag.tag_value }}
@@ -118,7 +123,7 @@
             <view
               v-for="tag in getFilteredTags('analysis')"
               :key="tag.id"
-              :class="['checkbox-item', { active: selectedTags.analysis.includes(tag.tag_value) }]"
+              :class="['checkbox-item', 'tag-green', { active: selectedTags.analysis.includes(tag.tag_value) }]"
               @click="toggleTag('analysis', tag.tag_value)"
             >
               {{ tag.tag_value }}
@@ -136,7 +141,7 @@
             <view
               v-for="tag in getFilteredTags('measures')"
               :key="tag.id"
-              :class="['checkbox-item', { active: selectedTags.measures.includes(tag.tag_value) }]"
+              :class="['checkbox-item', 'tag-orange', { active: selectedTags.measures.includes(tag.tag_value) }]"
               @click="toggleTag('measures', tag.tag_value)"
             >
               {{ tag.tag_value }}
@@ -164,39 +169,23 @@
         </view>
       </view>
 
-      <!-- 谈话记录 -->
+      <!-- 谈话记录 (合并版) -->
       <view class="card">
+        <view class="card-title">谈话记录</view>
+        
+        <!-- 谈话事由 -->
         <view class="form-item">
-          <view class="form-label"><text class="required">*</text>谈话记录</view>
+          <view class="form-label"><text class="required">*</text>谈话事由</view>
           <textarea
             class="textarea"
             v-model="formData.talk_content"
             placeholder="请输入谈话事由及详细内容..."
             :maxlength="2000"
+            @focus="currentFocusField = 'talk_content'"
           />
-          <!-- 辅助输入按钮 -->
-          <view class="assist-buttons">
-            <view 
-              :class="['assist-btn', { recording: isRecordingTalkContent }]" 
-              @click="handleVoiceInput('talk_content')"
-            >
-              <text class="assist-icon">🎤</text>
-              <text class="assist-text">{{ isRecordingTalkContent ? '录音中...' : '语音输入' }}</text>
-            </view>
-            <view 
-              class="assist-btn" 
-              @click="handleOcrInput('talk_content')"
-              :class="{ disabled: isOcrProcessingTalkContent }"
-            >
-              <text class="assist-icon">📷</text>
-              <text class="assist-text">{{ isOcrProcessingTalkContent ? '识别中...' : '拍照识别' }}</text>
-            </view>
-          </view>
         </view>
-      </view>
 
-      <!-- 情况分析 -->
-      <view class="card">
+        <!-- 情况分析 -->
         <view class="form-item">
           <view class="form-label"><text class="required">*</text>情况分析</view>
           <textarea
@@ -204,30 +193,11 @@
             v-model="formData.situation_analysis"
             placeholder="请输入情况分析内容..."
             :maxlength="2000"
+             @focus="currentFocusField = 'situation_analysis'"
           />
-          <!-- 辅助输入按钮 -->
-          <view class="assist-buttons">
-            <view 
-              :class="['assist-btn', { recording: isRecordingSituationAnalysis }]" 
-              @click="handleVoiceInput('situation_analysis')"
-            >
-              <text class="assist-icon">🎤</text>
-              <text class="assist-text">{{ isRecordingSituationAnalysis ? '录音中...' : '语音输入' }}</text>
-            </view>
-            <view 
-              class="assist-btn" 
-              @click="handleOcrInput('situation_analysis')"
-              :class="{ disabled: isOcrProcessingSituationAnalysis }"
-            >
-              <text class="assist-icon">📷</text>
-              <text class="assist-text">{{ isOcrProcessingSituationAnalysis ? '识别中...' : '拍照识别' }}</text>
-            </view>
-          </view>
         </view>
-      </view>
 
-      <!-- 处置结果 -->
-      <view class="card">
+        <!-- 处置结果 -->
         <view class="form-item">
           <view class="form-label"><text class="required">*</text>处置结果</view>
           <textarea
@@ -235,24 +205,26 @@
             v-model="formData.disposal_result"
             placeholder="请输入处置结果内容..."
             :maxlength="2000"
+             @focus="currentFocusField = 'disposal_result'"
           />
-          <!-- 辅助输入按钮 -->
-          <view class="assist-buttons">
-            <view 
-              :class="['assist-btn', { recording: isRecordingDisposalResult }]" 
-              @click="handleVoiceInput('disposal_result')"
-            >
-              <text class="assist-icon">🎤</text>
-              <text class="assist-text">{{ isRecordingDisposalResult ? '录音中...' : '语音输入' }}</text>
-            </view>
-            <view 
-              class="assist-btn" 
-              @click="handleOcrInput('disposal_result')"
-              :class="{ disabled: isOcrProcessingDisposalResult }"
-            >
-              <text class="assist-icon">📷</text>
-              <text class="assist-text">{{ isOcrProcessingDisposalResult ? '识别中...' : '拍照识别' }}</text>
-            </view>
+        </view>
+
+        <!-- 底部共享按钮 -->
+        <view class="assist-buttons centered">
+          <view 
+            :class="['assist-btn', 'assist-btn-small', { recording: isAnyRecording }]" 
+            @click="handleVoiceInput()"
+          >
+            <text class="assist-icon">🎤</text>
+            <text class="assist-text">{{ isAnyRecording ? '录音中...' : '语音输入' }}</text>
+          </view>
+          <view 
+            class="assist-btn assist-btn-small" 
+            @click="handleOcrInput()"
+            :class="{ disabled: isAnyOcrProcessing }"
+          >
+            <text class="assist-icon">📷</text>
+            <text class="assist-text">{{ isAnyOcrProcessing ? '识别中...' : '拍照识别' }}</text>
           </view>
         </view>
       </view>
@@ -271,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { getQuickTags, createRecord, type QuickTag, type TagDetail } from '@/api/index';
 
 // 风险等级选项
@@ -309,6 +281,12 @@ const isOcrProcessingTalkContent = ref(false);
 const isOcrProcessingSituationAnalysis = ref(false);
 const isOcrProcessingDisposalResult = ref(false);
 
+const isAnyRecording = computed(() => isRecordingTalkContent.value || isRecordingSituationAnalysis.value || isRecordingDisposalResult.value);
+const isAnyOcrProcessing = computed(() => isOcrProcessingTalkContent.value || isOcrProcessingSituationAnalysis.value || isOcrProcessingDisposalResult.value);
+
+// 当前聚焦的输入框 (默认第一个)
+const currentFocusField = ref('talk_content');
+
 // 当前正在录音的目标字段
 const currentRecordingField = ref<string | null>(null);
 
@@ -343,11 +321,11 @@ const submitting = ref(false);
 
 // 场景选项
 const sceneOptions = [
-  { value: '', label: '全部' },
-  { value: '学业', label: '学业' },
-  { value: '违纪', label: '违纪' },
-  { value: '心理', label: '心理' },
-  { value: '宿舍', label: '宿舍' },
+  { value: '', label: '全部', icon: '', color: '#007AFF' },
+  { value: '学业', label: '学业', icon: '📚', color: '#1890ff' },
+  { value: '违纪', label: '违纪', icon: '⚠️', color: '#faad14' },
+  { value: '心理', label: '心理', icon: '💗', color: '#eb2f96' },
+  { value: '宿舍', label: '宿舍', icon: '🏠', color: '#52c41a' },
 ];
 
 // 当前选中的场景（空字符串表示全部）
@@ -547,25 +525,30 @@ function isFieldRecording(field: string): boolean {
 }
 
 // 语音输入处理
-function handleVoiceInput(targetField: string) {
+function handleVoiceInput(targetField?: string) {
   // #ifdef MP-WEIXIN
   if (!manager) {
     uni.showToast({ title: '请先在小程序后台添加同声传译插件', icon: 'none' });
     return;
   }
   
-  if (isFieldRecording(targetField)) {
-    // 停止录音
+  // 如果正在录音，则停止（无论当前点击的是哪个字段，或者共享按钮）
+  if (isRecordingTalkContent.value || isRecordingSituationAnalysis.value || isRecordingDisposalResult.value) {
     manager.stop();
-  } else {
-    // 开始录音
-    currentRecordingField.value = targetField;
-    setRecordingState(targetField, true);
-    manager.start({
-      lang: 'zh_CN',  // 中文
-    });
-    uni.showToast({ title: '开始录音，再次点击结束', icon: 'none' });
+    return;
   }
+  
+  // 确定目标字段 (参数优先 > 当前焦点 > 默认)
+  const field = targetField || currentFocusField.value || 'talk_content';
+  
+  // 开始录音
+  currentRecordingField.value = field;
+  setRecordingState(field, true);
+  manager.start({
+    lang: 'zh_CN',  // 中文
+  });
+  uni.showToast({ title: '开始录音，再次点击结束', icon: 'none' });
+
   // #endif
   
   // #ifdef H5
@@ -575,11 +558,14 @@ function handleVoiceInput(targetField: string) {
 
 // ============ 拍照识别功能（OCR） ============
 // 百度OCR - 需要配置后端API
-async function handleOcrInput(targetField: string) {
+async function handleOcrInput(targetField?: string) {
+  // 确定目标字段 (参数优先 > 当前焦点 > 默认)
+  const field = targetField || currentFocusField.value || 'talk_content';
+
   // 检查该字段是否正在处理
-  if (targetField === 'talk_content' && isOcrProcessingTalkContent.value) return;
-  if (targetField === 'situation_analysis' && isOcrProcessingSituationAnalysis.value) return;
-  if (targetField === 'disposal_result' && isOcrProcessingDisposalResult.value) return;
+  if (field === 'talk_content' && isOcrProcessingTalkContent.value) return;
+  if (field === 'situation_analysis' && isOcrProcessingSituationAnalysis.value) return;
+  if (field === 'disposal_result' && isOcrProcessingDisposalResult.value) return;
   
   try {
     // 选择图片（拍照或相册）
@@ -593,7 +579,7 @@ async function handleOcrInput(targetField: string) {
       return;
     }
     
-    setOcrProcessingState(targetField, true);
+    setOcrProcessingState(field, true);
     uni.showLoading({ title: '正在识别...' });
     
     const imagePath = res.tempFilePaths[0];
@@ -608,13 +594,13 @@ async function handleOcrInput(targetField: string) {
           const data = JSON.parse(uploadRes.data);
           if (data.code === 200 && data.data?.text) {
             // 追加识别结果到对应字段
-            if (targetField === 'talk_content') {
+            if (field === 'talk_content') {
               if (formData.talk_content) formData.talk_content += '\n';
               formData.talk_content += data.data.text;
-            } else if (targetField === 'situation_analysis') {
+            } else if (field === 'situation_analysis') {
               if (formData.situation_analysis) formData.situation_analysis += '\n';
               formData.situation_analysis += data.data.text;
-            } else if (targetField === 'disposal_result') {
+            } else if (field === 'disposal_result') {
               if (formData.disposal_result) formData.disposal_result += '\n';
               formData.disposal_result += data.data.text;
             }
@@ -631,13 +617,13 @@ async function handleOcrInput(targetField: string) {
         uni.showToast({ title: '上传图片失败', icon: 'none' });
       },
       complete: () => {
-        setOcrProcessingState(targetField, false);
+        setOcrProcessingState(field, false);
         uni.hideLoading();
       },
     });
   } catch (err) {
     console.error('选择图片失败:', err);
-    setOcrProcessingState(targetField, false);
+    setOcrProcessingState(field, false);
   }
 }
 
@@ -833,12 +819,14 @@ onMounted(() => {
 
 .textarea {
   width: 100%;
-  height: 120px;
-  padding: 12px;
+  height: 72px;
+  padding: 10px 12px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   font-size: 14px;
+  line-height: 1.5;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .checkbox-group {
@@ -861,6 +849,54 @@ onMounted(() => {
   background-color: #e6f4ff;
   border-color: #007AFF;
   color: #007AFF;
+}
+
+/* 标签配色方案 - 淡蓝色系 (事由/问题) */
+.tag-blue {
+  background-color: #f0f5ff;
+  border-color: #adc6ff;
+  color: #597ef7;
+}
+.tag-blue.active {
+  background-color: #e6f4ff;
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+/* 标签配色方案 - 青色系 (学生表现) */
+.tag-cyan {
+  background-color: #e6fffb;
+  border-color: #87e8de;
+  color: #13c2c2;
+}
+.tag-cyan.active {
+  background-color: #b5f5ec;
+  border-color: #13c2c2;
+  color: #006d75;
+}
+
+/* 标签配色方案 - 橙色系 (原因分析) */
+.tag-orange {
+  background-color: #fff7e6;
+  border-color: #ffd591;
+  color: #fa8c16;
+}
+.tag-orange.active {
+  background-color: #ffe7ba;
+  border-color: #fa8c16;
+  color: #d46b08;
+}
+
+/* 标签配色方案 - 绿色系 (处置结果) */
+.tag-green {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+.tag-green.active {
+  background-color: #d9f7be;
+  border-color: #52c41a;
+  color: #389e0d;
 }
 
 .radio-group {
@@ -945,16 +981,27 @@ onMounted(() => {
   margin-top: 12px;
 }
 
+.assist-buttons.centered {
+  justify-content: center;
+}
+
+.assist-btn-small {
+  flex: none;
+  min-width: 100px;
+  max-width: 120px;
+  padding: 10px 14px;
+}
+
 .assist-btn {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border: 1px solid #dee2e6;
-  border-radius: 12px;
+  border-radius: 20px;
   transition: all 0.2s ease;
 }
 
@@ -1035,6 +1082,11 @@ onMounted(() => {
 .scene-dot.active {
   border-color: #007AFF;
   border-width: 4px;
+}
+
+.scene-icon {
+  font-size: 16px;
+  margin-right: 2px;
 }
 
 

@@ -143,6 +143,13 @@ export function deleteRecord(id: number) {
     });
 }
 
+// 获取学生姓名联想
+export function getStudentSuggestions(keyword: string) {
+    return request<string[]>(`/record/suggest?keyword=${encodeURIComponent(keyword)}`, {
+        method: 'GET',
+    });
+}
+
 // ========================
 // 快捷标签相关接口
 // ========================
