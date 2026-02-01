@@ -1,11 +1,27 @@
 // API 配置和请求封装
 
 // API 基础路径
-// 本地开发环境使用本机 IP（微信小程序模拟器无法识别 localhost）
-// H5 开发可以使用 localhost，小程序必须使用 IP 地址
-const BASE_URL = 'http://192.168.0.103:3000/api/v1';
-// 外网访问时使用 cpolar 地址（需要 cpolar 隧道正在运行）
-//const BASE_URL = 'https://4cf78f5.r28.cpolar.top/api/v1';
+// H5 开发走 Vite 代理（/api -> http://localhost:3000）
+let BASE_URL = '/api/v1';
+
+// 小程序：优先读本地缓存，其次读环境变量，最后回退到示例 IP
+// 如需固定地址，建议使用 cpolar/域名并写入缓存
+// #ifdef MP-WEIXIN
+const MP_CACHED_BASE_URL = uni.getStorageSync('API_BASE_URL');
+const MP_ENV_BASE_URL = (import.meta as any).env?.VITE_MP_API_BASE_URL as string | undefined;
+BASE_URL = MP_CACHED_BASE_URL || MP_ENV_BASE_URL || 'http://192.168.0.100:3000/api/v1';
+// #endif
+
+export function setApiBaseUrl(url: string) {
+    BASE_URL = url;
+    // #ifdef MP-WEIXIN
+    uni.setStorageSync('API_BASE_URL', url);
+    // #endif
+}
+
+export function getApiBaseUrl() {
+    return BASE_URL;
+}
 
 // 通用响应类型
 interface ApiResponse<T = unknown> {
@@ -125,6 +141,17 @@ export function getRecordDetail(id: number) {
     });
 }
 
+// 更新记录
+export function updateRecord(id: number, data: CreateRecordRequest) {
+    return request<{ id: number; student_name: string; update_time: string }>(`/record/${id}`, {
+        method: 'PUT',
+        header: {
+            'Content-Type': 'application/json',
+        },
+        data,
+    });
+}
+
 // 创建记录
 export function createRecord(data: CreateRecordRequest) {
     return request<{ id: number }>('/record', {
@@ -143,9 +170,15 @@ export function deleteRecord(id: number) {
     });
 }
 
+// 联想结果类型
+export interface SuggestionItem {
+    student_name: string;
+    class_name: string;
+}
+
 // 获取学生姓名联想
 export function getStudentSuggestions(keyword: string) {
-    return request<string[]>(`/record/suggest?keyword=${encodeURIComponent(keyword)}`, {
+    return request<SuggestionItem[]>(`/record/suggest?keyword=${encodeURIComponent(keyword)}`, {
         method: 'GET',
     });
 }

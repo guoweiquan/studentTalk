@@ -1,8 +1,76 @@
+<template>
+  <view>
+    <!-- #ifdef MP-WEIXIN -->
+    <view v-if="showApiConfig" class="api-config-mask">
+      <view class="api-config-card">
+        <view class="api-config-title">设置 API 地址</view>
+        <view class="api-config-desc">仅首次启动需要设置，建议填写带 <text>/api/v1</text> 的完整地址。</view>
+        <input
+          v-model="apiInput"
+          class="api-config-input"
+          placeholder="例如：http://192.168.0.100:3000/api/v1"
+          placeholder-class="api-config-placeholder"
+        />
+        <view class="api-config-actions">
+          <button class="btn-secondary" @click="handleSkip">稍后再说</button>
+          <button class="btn-primary" @click="handleSave">保存</button>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
+  </view>
+</template>
+
 <script setup lang="ts">
+import { ref } from 'vue';
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app';
+import { getApiBaseUrl, setApiBaseUrl } from './api';
+
+const showApiConfig = ref(false);
+const apiInput = ref('');
+
+function normalizeApiBaseUrl(raw: string) {
+  let value = raw.trim();
+  if (!value) return '';
+  value = value.replace(/\s+/g, '');
+  if (!/^https?:\/\//i.test(value)) return '';
+  if (value.endsWith('/')) value = value.slice(0, -1);
+  if (!/\/api\/v1$/i.test(value)) {
+    value = `${value}/api/v1`;
+  }
+  return value;
+}
+
+function handleSave() {
+  const normalized = normalizeApiBaseUrl(apiInput.value);
+  if (!normalized) {
+    uni.showToast({
+      title: '请输入有效的 API 地址',
+      icon: 'none',
+    });
+    return;
+  }
+  setApiBaseUrl(normalized);
+  showApiConfig.value = false;
+  uni.showToast({
+    title: '已保存',
+    icon: 'success',
+  });
+}
+
+function handleSkip() {
+  showApiConfig.value = false;
+}
 
 onLaunch(() => {
   console.log('App Launch');
+  // #ifdef MP-WEIXIN
+  const cached = uni.getStorageSync('API_BASE_URL');
+  if (!cached) {
+    showApiConfig.value = true;
+    apiInput.value = getApiBaseUrl();
+  }
+  // #endif
 });
 
 onShow(() => {
@@ -20,6 +88,7 @@ page {
   background-color: #f5f5f5;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
+
 
 /* 通用卡片样式 */
 .card {
@@ -76,6 +145,65 @@ page {
   font-size: 16px;
 }
 
+/* API 配置弹窗样式 */
+.api-config-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+
+.api-config-card {
+  width: 100%;
+  max-width: 560rpx;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32rpx 28rpx;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.api-config-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f1f1f;
+  margin-bottom: 12px;
+}
+
+.api-config-desc {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 18px;
+}
+
+.api-config-input {
+  width: 100%;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #222;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+.api-config-placeholder {
+  color: #999;
+}
+
+.api-config-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 /* 标签样式 */
 .tag {
   display: inline-block;
@@ -84,6 +212,7 @@ page {
   font-size: 12px;
   margin: 4px;
 }
+
 
 .tag-primary {
   background-color: #e6f4ff;

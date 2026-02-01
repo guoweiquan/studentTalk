@@ -7,6 +7,12 @@ export async function OPTIONS() {
     return options();
 }
 
+// 联想结果类型
+interface SuggestionItem {
+    student_name: string;
+    class_name: string;
+}
+
 // GET /api/v1/record/suggest - 获取学生姓名联想
 export async function GET(request: NextRequest) {
     try {
@@ -14,10 +20,10 @@ export async function GET(request: NextRequest) {
         const keyword = searchParams.get('keyword') || '';
 
         if (!keyword.trim()) {
-            return success<string[]>([]);
+            return success<SuggestionItem[]>([]);
         }
 
-        // 查询匹配的学生姓名（去重）
+        // 查询匹配的学生姓名和班级（按组合去重）
         const records = await prisma.talkRecord.findMany({
             where: {
                 studentName: {
@@ -26,16 +32,21 @@ export async function GET(request: NextRequest) {
             },
             select: {
                 studentName: true,
+                className: true,
             },
-            distinct: ['studentName'],
-            orderBy: {
-                studentName: 'asc',
-            },
+            distinct: ['studentName', 'className'],
+            orderBy: [
+                { studentName: 'asc' },
+                { className: 'asc' },
+            ],
             take: 10,
         });
 
-        // 提取学生姓名数组
-        const suggestions = records.map(r => r.studentName);
+        // 转换为前端需要的格式
+        const suggestions: SuggestionItem[] = records.map(r => ({
+            student_name: r.studentName,
+            class_name: r.className,
+        }));
 
         return success(suggestions);
     } catch (err) {

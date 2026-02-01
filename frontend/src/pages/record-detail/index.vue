@@ -85,11 +85,11 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
-      <button class="btn btn-secondary" @click="handleCopy">
-        📋 复制文本
+      <button class="btn btn-secondary" @click="handleEdit">
+        编辑记录
       </button>
       <button class="btn btn-danger" @click="handleDelete">
-        🗑️ 删除记录
+        删除记录
       </button>
     </view>
   </view>
@@ -97,6 +97,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { getRecordDetail, deleteRecord, type TalkRecord } from '@/api/index';
 
 const record = ref<TalkRecord | null>(null);
@@ -104,8 +105,16 @@ const recordId = ref(0);
 
 // 获取记录详情
 async function fetchDetail() {
+  if (!recordId.value) {
+    console.error('记录ID为空');
+    uni.showToast({ title: '记录ID无效', icon: 'none' });
+    return;
+  }
+  
   try {
+    console.log('开始获取记录详情，ID:', recordId.value);
     const res = await getRecordDetail(recordId.value);
+    console.log('获取记录详情成功:', res);
     record.value = res.data;
   } catch (error) {
     console.error('获取详情失败:', error);
@@ -129,24 +138,43 @@ function getRiskLabel(level: number): string {
   return labels[level] || '未知';
 }
 
-// 复制文本
-function handleCopy() {
-  if (!record.value) return;
+// 编辑记录
+function handleEdit() {
+  if (!record.value || !recordId.value) return;
   
-  const text = record.value.generated_content || `
-学生姓名：${record.value.student_name}
-班级/学号：${record.value.class_name} / ${record.value.student_no}
-谈话时间：${formatDateTime(record.value.talk_time)}
-谈话地点：${record.value.talk_place}
-参与人：${record.value.participants}
-谈话事由：${record.value.reason}
-`;
+  console.log('准备编辑记录，ID:', recordId.value);
+  console.log('记录数据:', record.value);
   
-  uni.setClipboardData({
-    data: text,
+  // 将记录数据缓存到本地存储
+  uni.setStorageSync('editRecord', {
+    id: recordId.value,
+    ...record.value
+  });
+  
+  // 验证数据是否保存成功
+  const savedData = uni.getStorageSync('editRecord');
+  console.log('保存到 localStorage 的数据:', savedData);
+  
+  // 保存来源信息：标记是从详情页跳转过来的
+  uni.setStorageSync('editRecordSource', {
+    fromDetail: true,
+    recordId: recordId.value
+  });
+  
+  console.log('准备跳转到新增记录页');
+  
+  // 跳转到新增记录页（tabBar页）
+  uni.switchTab({
+    url: '/pages/record-add/index',
     success: () => {
-      uni.showToast({ title: '已复制到剪贴板', icon: 'success' });
+      console.log('跳转成功，发送 loadEditRecord 事件');
+      // 通知新增页面加载编辑数据
+      uni.$emit('loadEditRecord');
     },
+    fail: () => {
+      console.error('跳转失败');
+      uni.showToast({ title: '跳转失败', icon: 'none' });
+    }
   });
 }
 
@@ -177,16 +205,22 @@ function handleDelete() {
   });
 }
 
-onMounted(() => {
-  // 获取页面参数
-  const pages = getCurrentPages();
-  const currentPage = pages[pages.length - 1];
-  const options = (currentPage as unknown as { options: { id: string } }).options;
+// 使用 onLoad 获取页面参数（兼容 H5 和小程序）
+onLoad((options) => {
+  console.log('onLoad 接收到的参数:', options);
   
   if (options?.id) {
-    recordId.value = parseInt(options.id, 10);
+    recordId.value = parseInt(options.id as string, 10);
+    console.log('解析后的 recordId:', recordId.value);
     fetchDetail();
+  } else {
+    console.error('未接收到 id 参数');
+    uni.showToast({ title: '缺少记录ID参数', icon: 'none' });
   }
+});
+
+onMounted(() => {
+  console.log('record-detail 页面 onMounted 触发');
 });
 </script>
 

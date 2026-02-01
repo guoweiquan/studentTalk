@@ -9,11 +9,11 @@
         <view class="form-row">
           <view class="form-item half">
             <view class="form-label"><text class="required">*</text>学生姓名</view>
-            <input class="input" v-model="formData.student_name" placeholder="请输入学生姓名" />
+            <input class="input" v-model="formData.student_name" placeholder="请输入学生姓名" :disabled="isFieldDisabled('student_name')" />
           </view>
           <view class="form-item half">
             <view class="form-label"><text class="required">*</text>学号</view>
-            <input class="input" v-model="formData.student_no" placeholder="如：202301" />
+            <input class="input" v-model="formData.student_no" placeholder="如：202301" :disabled="isFieldDisabled('student_no')" />
           </view>
         </view>
 
@@ -21,11 +21,11 @@
         <view class="form-row">
           <view class="form-item half">
             <view class="form-label"><text class="required">*</text>班级</view>
-            <input class="input" v-model="formData.class_name" placeholder="如：7年级2班" />
+            <input class="input" v-model="formData.class_name" placeholder="如：7年级2班" :disabled="isFieldDisabled('class_name')" />
           </view>
           <view class="form-item half">
             <view class="form-label"><text class="required">*</text>谈话地点</view>
-            <input class="input" v-model="formData.talk_place" placeholder="如：办公室" />
+            <input class="input" v-model="formData.talk_place" placeholder="如：办公室" :disabled="isFieldDisabled('talk_place')" />
           </view>
         </view>
 
@@ -39,7 +39,7 @@
       </view>
 
       <!-- 场景选择 -->
-      <view class="card scene-card">
+      <view class="card scene-card" v-if="mode !== 'view'">
         <view class="form-item">
           <view class="form-label">场景（可选）</view>
           <view class="scene-group">
@@ -48,7 +48,7 @@
               :key="scene.value"
               :class="['scene-item', { active: selectedScene === scene.value }]"
               :style="selectedScene === scene.value ? { borderColor: scene.color, backgroundColor: scene.color + '15', color: scene.color } : {}"
-              @click="selectedScene = scene.value"
+              @click="mode !== 'view' && (selectedScene = scene.value)"
             >
               <view 
                 :class="['scene-dot', selectedScene === scene.value ? 'active' : '']"
@@ -235,16 +235,37 @@
 
     <!-- 底部按钮 -->
     <view class="bottom-bar">
-      <button class="btn btn-primary" @click="handleSubmit" :disabled="submitting">
+      <!-- 新增模式 -->
+      <button v-if="mode === 'add'" class="btn btn-primary" @click="handleSubmit" :disabled="submitting">
         {{ submitting ? '保存中...' : '提交保存' }}
       </button>
+      
+      <!-- 查看模式 -->
+      <template v-if="mode === 'view'">
+        <button class="btn btn-secondary" @click="handleEdit">编辑记录</button>
+        <button class="btn btn-danger" @click="handleDelete">删除记录</button>
+      </template>
+      
+      <!-- 编辑模式 -->
+      <template v-if="mode === 'edit'">
+        <button class="btn btn-secondary" @click="handleCancel">取消</button>
+        <button class="btn btn-primary" @click="handleSubmit" :disabled="submitting">
+          {{ submitting ? '保存中...' : '保存' }}
+        </button>
+      </template>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { getQuickTags, createRecord, type QuickTag, type TagDetail } from '@/api/index';
+import { onShow } from '@dcloudio/uni-app';
+import { getQuickTags, createRecord, updateRecord, deleteRecord, getRecordDetail, type QuickTag, type TagDetail } from '@/api/index';
+
+// 页面模式: 新增/查看/编辑
+type PageMode = 'add' | 'view' | 'edit';
+const mode = ref<PageMode>('add');
+const recordId = ref<number | null>(null);
 
 // 风险等级选项
 const riskLevels = [
@@ -363,6 +384,152 @@ async function loadQuickTags() {
     });
   } catch (error) {
     console.error('加载快捷标签失败:', error);
+  }
+}
+
+// 判断字段是否禁用
+function isFieldDisabled(fieldName: string): boolean {
+  // 新增模式：所有字段可编辑
+  if (mode.value === 'add') return false;
+  
+  // 查看模式：所有字段禁用
+  if (mode.value === 'view') return true;
+  
+  // 编辑模式：基础信息字段禁用,其他字段可编辑
+  const baseInfoFields = ['student_name', 'student_no', 'class_name', 'talk_place', 'talk_time'];
+  if (mode.value === 'edit' && baseInfoFields.includes(fieldName)) {
+    return true;
+  }
+  
+  return false;
+}
+
+// 加载记录详情
+async function loadRecordDetail(id: number) {
+  try {
+    const res = await getRecordDetail(id);
+    const data = res.data;
+    
+    // 填充表单数据
+    formData.student_name = data.student_name;
+    formData.class_name = data.class_name;
+    formData.student_no = data.student_no;
+    formData.talk_time = data.talk_time;
+    formData.talk_place = data.talk_place;
+    formData.risk_level = data.risk_level;
+    formData.talk_content = data.talk_content || '';
+    formData.situation_analysis = data.situation_analysis || '';
+    formData.disposal_result = data.disposal_result || '';
+    
+    // 解析并填充标签数据
+    if (data.tags && Array.isArray(data.tags)) {
+      selectedTags.participants = data.tags.filter(t => tagOptions.participants.some(opt => opt.tag_value === t));
+      selectedTags.reason = data.tags.filter(t => tagOptions.reason.some(opt => opt.tag_value === t));
+      selectedTags.attitude = data.tags.filter(t => tagOptions.attitude.some(opt => opt.tag_value === t));
+      selectedTags.analysis = data.tags.filter(t => tagOptions.analysis.some(opt => opt.tag_value === t));
+      selectedTags.measures = data.tags.filter(t => tagOptions.measures.some(opt => opt.tag_value === t));
+    }
+    
+    // 设置谈话日期
+    if (data.record_date) {
+      talkDate.value = data.record_date.split('T')[0];
+    }
+    
+    // 解析参与人
+    if (data.participants) {
+      const parts = data.participants.split('、');
+      const knownTags = tagOptions.participants.map(t => t.tag_value);
+      selectedTags.participants = parts.filter(p => knownTags.includes(p));
+      const custom = parts.filter(p => !knownTags.includes(p));
+      if (custom.length > 0) {
+        customInputs.participants = custom.join('、');
+      }
+    }
+    
+    // 类似地解析其他字段
+    ['reason', 'attitude', 'analysis', 'measures'].forEach((key) => {
+      const fieldKey = key === 'attitude' ? 'student_behavior' : 
+                       key === 'analysis' ? 'analysis' : 
+                       key === 'measures' ? 'result' : key;
+      const value = data.form_data?.[fieldKey];
+      if (typeof value === 'string') {
+        const parts = value.split('、');
+        const knownTags = tagOptions[key].map((t: TagDetail) => t.tag_value);
+        selectedTags[key] = parts.filter(p => knownTags.includes(p));
+        const custom = parts.filter(p => !knownTags.includes(p));
+        if (custom.length > 0) {
+          customInputs[key] = custom.join('、');
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('加载记录详情失败:', error);
+    uni.showToast({ title: '加载记录失败', icon: 'none' });
+  }
+}
+
+// 编辑记录
+function handleEdit() {
+  mode.value = 'edit';
+}
+
+// 删除记录
+async function handleDelete() {
+  if (!recordId.value) return;
+  
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这条记录吗？删除后无法恢复。',
+    success: async (res) => {
+      if (res.confirm && recordId.value) {
+        try {
+          await deleteRecord(recordId.value);
+          uni.showToast({ title: '删除成功', icon: 'success' });
+          setTimeout(() => {
+            uni.switchTab({ url: '/pages/record-list/index' });
+          }, 1500);
+        } catch (error) {
+          console.error('删除失败:', error);
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
+    },
+  });
+}
+
+// 取消编辑
+function handleCancel() {
+  // 检查是否是从详情页跳转过来的
+  const source = uni.getStorageSync('editRecordSource');
+  
+  if (source && source.fromDetail && source.recordId) {
+    // 清除来源标记和编辑数据
+    uni.removeStorageSync('editRecordSource');
+    uni.removeStorageSync('editRecord');
+    
+    // 返回详情页（只读模式）
+    uni.navigateTo({
+      url: `/pages/record-detail/index?id=${source.recordId}`,
+      success: () => {
+        console.log('取消编辑，返回详情页');
+      },
+      fail: (err) => {
+        console.error('返回详情页失败:', err);
+        // 如果跳转失败，fallback 到原有逻辑
+        mode.value = 'view';
+        if (recordId.value) {
+          loadRecordDetail(recordId.value);
+        }
+      }
+    });
+  } else {
+    // 原有逻辑：直接切换到查看模式
+    mode.value = 'view';
+    // 重新加载数据
+    if (recordId.value) {
+      loadRecordDetail(recordId.value);
+    }
   }
 }
 
@@ -671,7 +838,7 @@ async function handleSubmit() {
   try {
     const generatedContent = generateContent();
     
-    await createRecord({
+    const requestData = {
       student_name: formData.student_name,
       class_name: formData.class_name,
       student_no: formData.student_no,
@@ -697,17 +864,29 @@ async function handleSubmit() {
       disposal_result: formData.disposal_result,
       generated_content: generatedContent,
       record_date: talkDate.value,
-    });
+    };
     
-    uni.showToast({ title: '保存成功', icon: 'success' });
+    if (mode.value === 'edit' && recordId.value) {
+      // 更新记录
+      await updateRecord(recordId.value, requestData);
+      uni.showToast({ title: '更新成功', icon: 'success' });
+    } else {
+      // 创建记录
+      await createRecord(requestData);
+      uni.showToast({ title: '保存成功', icon: 'success' });
+    }
     
     // 通知列表页刷新
     uni.$emit('refreshRecordList');
     
-    // 返回列表页并重置表单
+    // 返回列表页
     setTimeout(() => {
-      resetForm(); //清空表单
-      uni.switchTab({ url: '/pages/record-list/index' });
+      if (mode.value === 'edit') {
+        uni.switchTab({ url: '/pages/record-list/index' });
+      } else {
+        resetForm(); //清空表单
+        uni.switchTab({ url: '/pages/record-list/index' });
+      }
     }, 1500);
   } catch (error) {
     console.error('保存失败:', error);
@@ -717,12 +896,77 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
+  console.log('record-add 页面 onMounted 触发');
   loadQuickTags();
   initVoicePlugin();  // 初始化语音识别插件
-  // 默认日期为今天
-  const today = new Date();
-  talkDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  formData.talk_time = talkDate.value + ' 09:00:00';
+  
+  // 解析URL参数
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1];
+  const options = (currentPage as any).$page?.options || {};
+  
+  // 检查是否是编辑模式（从详情页跳转过来）
+  const editRecord = uni.getStorageSync('editRecord');
+  console.log('onMounted 检查 editRecord:', editRecord);
+  
+  if (editRecord && editRecord.id) {
+    console.log('检测到编辑记录，准备加载，ID:', editRecord.id);
+    // 切换到编辑模式
+    recordId.value = editRecord.id;
+    mode.value = 'edit';
+    
+    // 加载记录详情
+    loadRecordDetail(recordId.value);
+    
+    // 清除缓存
+    uni.removeStorageSync('editRecord');
+  } else if (options.id) {
+    recordId.value = parseInt(options.id, 10);
+    mode.value = options.mode === 'edit' ? 'edit' : 'view';
+    loadRecordDetail(recordId.value);
+  } else {
+    // 新增模式：默认日期为今天
+    console.log('进入新增模式');
+    const today = new Date();
+    talkDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    formData.talk_time = talkDate.value + ' 09:00:00';
+    
+    // 清除来源标记（如果用户直接点击 tabBar 进入新增模式）
+    uni.removeStorageSync('editRecordSource');
+  }
+  
+  // 监听从详情页发来的加载编辑记录事件
+  uni.$on('loadEditRecord', () => {
+    const editRecordData = uni.getStorageSync('editRecord');
+    if (editRecordData && editRecordData.id) {
+      recordId.value = editRecordData.id;
+      mode.value = 'edit';
+      loadRecordDetail(recordId.value);
+      uni.removeStorageSync('editRecord');
+    }
+  });
+});
+
+// 添加 onShow 生命周期，确保每次页面显示时都检查编辑数据
+onShow(() => {
+  console.log('record-add 页面 onShow 触发');
+  
+  // 检查是否有待编辑的记录（针对 H5 环境的兼容处理）
+  const editRecord = uni.getStorageSync('editRecord');
+  console.log('onShow 检查 editRecord:', editRecord);
+  
+  if (editRecord && editRecord.id) {
+    console.log('onShow 检测到编辑记录，准备加载，ID:', editRecord.id);
+    // 切换到编辑模式
+    recordId.value = editRecord.id;
+    mode.value = 'edit';
+    
+    // 加载记录详情
+    loadRecordDetail(recordId.value);
+    
+    // 清除缓存
+    uni.removeStorageSync('editRecord');
+  }
 });
 </script>
 
@@ -809,6 +1053,12 @@ onMounted(() => {
   border-radius: 8px;
   font-size: 14px;
   box-sizing: border-box;
+  background-color: #fff;
+}
+
+.input[disabled] {
+  background-color: #f5f5f5;
+  color: #999;
 }
 
 .picker-input {
@@ -951,10 +1201,12 @@ onMounted(() => {
   background-color: #fff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
   z-index: 999;
+  display: flex;
+  gap: 12px;
 }
 
 .btn {
-  width: 100%;
+  flex: 1;
   height: 48px;
   border-radius: 24px;
   font-size: 16px;
@@ -972,6 +1224,18 @@ onMounted(() => {
 
 .btn-primary[disabled] {
   opacity: 0.6;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-danger {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
 }
 
 /* 辅助输入按钮样式 */

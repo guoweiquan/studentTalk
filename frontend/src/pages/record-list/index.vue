@@ -18,17 +18,19 @@
       <!-- 联想下拉列表 -->
       <view v-if="showSuggestions && suggestions.length > 0" class="suggestions-dropdown">
         <view
-          v-for="(name, index) in suggestions"
+          v-for="(item, index) in suggestions"
           :key="index"
           class="suggestion-item"
-          @click="selectSuggestion(name)"
+          @click="selectSuggestion(item.student_name)"
         >
-          {{ name }}
+          <text class="suggestion-name">{{ item.student_name }}</text>
+          <text class="suggestion-class">（{{ item.class_name }}）</text>
         </view>
       </view>
+      
+      <!-- 遮罩层，点击关闭联想 -->
+      <view v-if="showSuggestions" class="suggestions-overlay" @click="showSuggestions = false"></view>
     </view>
-    <!-- 遮罩层，点击关闭联想 -->
-    <view v-if="showSuggestions" class="suggestions-overlay" @click="showSuggestions = false"></view>
 
     <!-- 记录列表 -->
     <scroll-view
@@ -77,7 +79,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { getRecordList, getStudentSuggestions, type TalkRecord } from '@/api/index';
+import { getRecordList, getStudentSuggestions, type TalkRecord, type SuggestionItem } from '@/api/index';
 
 // 状态
 const records = ref<TalkRecord[]>([]);
@@ -89,7 +91,7 @@ const size = 10;
 const hasMore = ref(true);
 
 // 联想相关
-const suggestions = ref<string[]>([]);
+const suggestions = ref<SuggestionItem[]>([]);
 const showSuggestions = ref(false);
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -207,8 +209,23 @@ function loadMore() {
 
 // 跳转到详情页
 function goToDetail(id: number) {
+  console.log('点击记录，准备跳转到详情页，ID:', id);
+  
+  // 关闭联想下拉
+  showSuggestions.value = false;
+  
   uni.navigateTo({
     url: `/pages/record-detail/index?id=${id}`,
+    success: () => {
+      console.log('跳转成功');
+    },
+    fail: (err) => {
+      console.error('跳转失败:', err);
+      uni.showToast({
+        title: '跳转失败',
+        icon: 'none'
+      });
+    }
   });
 }
 
@@ -225,11 +242,9 @@ function truncateText(text: string, maxLen: number): string {
   return text.substring(0, maxLen) + '...';
 }
 
-// 格式化班级名称（简写）
+// 格式化班级名称
 function formatClassName(className: string): string {
-  if (!className) return '';
-  // 尝试简写，如 "六年级3班" -> "六年3班"
-  return className.replace('年级', '年');
+  return className || '';
 }
 
 // 获取风险等级简短标签
@@ -326,10 +341,23 @@ onUnmounted(() => {
 }
 
 .suggestion-item {
+  display: flex;
+  align-items: center;
   padding: 12px 16px;
   font-size: 14px;
   color: #333;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.suggestion-class {
+  color: #999;
+  font-size: 13px;
+  margin-left: 2px;
 }
 
 .suggestion-item:last-child {
@@ -346,7 +374,8 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 99;
+  z-index: 98;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .record-list {
@@ -362,6 +391,9 @@ onUnmounted(() => {
   margin: 0 0 1px 0;
   padding: 14px 12px;
   gap: 8px;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
 }
 
 .record-row:active {
@@ -421,19 +453,23 @@ onUnmounted(() => {
 }
 
 .row-class {
-  flex: 1 1 auto;
+  flex: 1;
   font-size: 12px;
   color: #999;
+  text-align: right;
+  margin-left: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: right;
 }
 
 .row-date {
   flex: 0 0 auto;
   font-size: 12px;
   color: #999;
+  margin-left: 8px;
+  min-width: 40px;
+  text-align: right;
 }
 
 .empty-state {
