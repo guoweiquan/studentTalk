@@ -1,39 +1,28 @@
 <template>
   <view class="page">
     <scroll-view class="form-scroll" scroll-y>
-      <!-- 基本信息 -->
+      <!-- 学生信息卡片区域 -->
       <view class="card">
-        <view class="card-title">基本信息</view>
-        
-        <!-- 第1行：学生姓名 + 学号 -->
-        <view class="form-row">
-          <view class="form-item half">
-            <view class="form-label"><text class="required">*</text>学生姓名</view>
-            <input class="input" v-model="formData.student_name" placeholder="请输入学生姓名" :disabled="isFieldDisabled('student_name')" />
+        <view class="card-title">学生信息</view>
+        <view class="student-cards">
+          <!-- 已添加的学生卡片 -->
+          <view 
+            v-for="(student, index) in students" 
+            :key="index" 
+            class="student-card"
+            @click="handleEditStudent(index)"
+          >
+            <text class="student-name">{{ student.student_name }}</text>
           </view>
-          <view class="form-item half">
-            <view class="form-label"><text class="required">*</text>学号</view>
-            <input class="input" v-model="formData.student_no" placeholder="如：202301" :disabled="isFieldDisabled('student_no')" />
-          </view>
-        </view>
-
-        <!-- 第2行：班级 + 谈话地点 -->
-        <view class="form-row">
-          <view class="form-item half">
-            <view class="form-label"><text class="required">*</text>班级</view>
-            <input class="input" v-model="formData.class_name" placeholder="如：7年级2班" :disabled="isFieldDisabled('class_name')" />
-          </view>
-          <view class="form-item half">
-            <view class="form-label"><text class="required">*</text>谈话地点</view>
-            <input class="input" v-model="formData.talk_place" placeholder="如：办公室" :disabled="isFieldDisabled('talk_place')" />
-          </view>
-        </view>
-
-        <!-- 第3行：谈话时间（只读，标签与日期同行） -->
-        <view class="form-item">
-          <view class="talk-time-row">
-            <text class="talk-time-label">谈话时间：</text>
-            <text class="talk-time-value">{{ talkDate }}</text>
+          
+          <!-- 添加学生按钮 -->
+          <view 
+            v-if="mode === 'add'" 
+            class="student-card add-card" 
+            @click="handleAddStudent"
+          >
+            <text class="add-icon">+</text>
+            <text class="add-text">添加</text>
           </view>
         </view>
       </view>
@@ -61,23 +50,6 @@
         </view>
       </view>
 
-      <!-- 参与人 -->
-      <view class="card">
-        <view class="form-item">
-          <view class="form-label"><text class="required">*</text>参与人</view>
-          <view class="checkbox-group">
-            <view
-              v-for="tag in tagOptions.participants"
-              :key="tag.id"
-              :class="['checkbox-item', { active: selectedTags.participants.includes(tag.tag_value) }]"
-              @click="toggleTag('participants', tag.tag_value)"
-            >
-              {{ tag.tag_value }}
-            </view>
-          </view>
-          <input class="input" v-model="customInputs.participants" placeholder="其他（自定义输入）" />
-        </view>
-      </view>
 
       <!-- 事由/问题 -->
       <view class="card">
@@ -267,6 +239,16 @@ type PageMode = 'add' | 'view' | 'edit';
 const mode = ref<PageMode>('add');
 const recordId = ref<number | null>(null);
 
+// 学生信息接口
+interface StudentInfo {
+  student_name: string;
+  student_no: string;
+  class_name: string;
+}
+
+// 学生列表（新增模式下支持多学生）
+const students = ref<StudentInfo[]>([]);
+
 // 风险等级选项
 const riskLevels = [
   { value: 1, label: '低' },
@@ -274,13 +256,8 @@ const riskLevels = [
   { value: 3, label: '高' },
 ];
 
-// 表单数据
+// 表单数据（不再包含学生信息和谈话地点）
 const formData = reactive({
-  student_name: '',
-  class_name: '',
-  student_no: '',
-  talk_time: '',
-  talk_place: '',
   risk_level: 1,
   talk_content: '',
   situation_analysis: '',
@@ -410,12 +387,14 @@ async function loadRecordDetail(id: number) {
     const res = await getRecordDetail(id);
     const data = res.data;
     
-    // 填充表单数据
-    formData.student_name = data.student_name;
-    formData.class_name = data.class_name;
-    formData.student_no = data.student_no;
-    formData.talk_time = data.talk_time;
-    formData.talk_place = data.talk_place;
+    // 填充学生信息到 students 数组
+    students.value = [{
+      student_name: data.student_name,
+      student_no: data.student_no,
+      class_name: data.class_name,
+    }];
+    
+    // 填充其他表单数据
     formData.risk_level = data.risk_level;
     formData.talk_content = data.talk_content || '';
     formData.situation_analysis = data.situation_analysis || '';
@@ -543,6 +522,28 @@ function toggleTag(category: string, value: string) {
   }
 }
 
+// ============ 学生操作函数 ============
+
+// 添加学生
+function handleAddStudent() {
+  // 保存当前学生列表到 Storage
+  uni.setStorageSync('temp_students', students.value);
+  // 跳转到学生信息页面（新增模式）
+  uni.navigateTo({
+    url: '/pages/student-info/index?mode=add',
+  });
+}
+
+// 编辑学生
+function handleEditStudent(index: number) {
+  // 保存当前学生列表到 Storage
+  uni.setStorageSync('temp_students', students.value);
+  // 跳转到学生信息页面（编辑模式）
+  uni.navigateTo({
+    url: `/pages/student-info/index?mode=edit&index=${index}`,
+  });
+}
+
 
 // 合并选中标签和自定义输入
 function mergeTagsAndCustom(category: string): string {
@@ -553,9 +554,8 @@ function mergeTagsAndCustom(category: string): string {
   return tags.join('、');
 }
 
-// 生成记录文本
-function generateContent(): string {
-  const participants = mergeTagsAndCustom('participants');
+// 生成记录文本（单个学生版本）
+function generateContent(student: StudentInfo): string {
   const reason = mergeTagsAndCustom('reason');
   const studentBehavior = mergeTagsAndCustom('attitude');
   const analysis = mergeTagsAndCustom('analysis');
@@ -563,8 +563,8 @@ function generateContent(): string {
   const riskLabel = riskLevels.find(l => l.value === formData.risk_level)?.label || '低';
 
   return `【学生谈话记录表】
-学生姓名：${formData.student_name}    班级/学号：${formData.class_name} / ${formData.student_no}
-谈话时间：${talkDate.value}    地点：${formData.talk_place}    参与人：${participants}
+学生姓名：${student.student_name}    班级/学号：${student.class_name} / ${student.student_no}
+谈话时间：${talkDate.value}
 谈话事由：${reason}
 学生表现：${studentBehavior}
 原因分析：${analysis}
@@ -575,24 +575,9 @@ function generateContent(): string {
 
 // 表单验证
 function validateForm(): boolean {
-  if (!formData.student_name.trim()) {
-    uni.showToast({ title: '请输入学生姓名', icon: 'none' });
-    return false;
-  }
-  if (!formData.class_name.trim()) {
-    uni.showToast({ title: '请输入班级', icon: 'none' });
-    return false;
-  }
-  if (!formData.student_no.trim()) {
-    uni.showToast({ title: '请输入学号', icon: 'none' });
-    return false;
-  }
-  if (!formData.talk_place.trim()) {
-    uni.showToast({ title: '请输入谈话地点', icon: 'none' });
-    return false;
-  }
-  if (selectedTags.participants.length === 0 && !customInputs.participants.trim()) {
-    uni.showToast({ title: '请选择或输入参与人', icon: 'none' });
+  // 新增模式下检查学生数组
+  if (mode.value === 'add' && students.value.length === 0) {
+    uni.showToast({ title: '请添加至少一个学生', icon: 'none' });
     return false;
   }
   if (selectedTags.reason.length === 0 && !customInputs.reason.trim()) {
@@ -796,11 +781,11 @@ async function handleOcrInput(targetField?: string) {
 
 // 重置表单
 function resetForm() {
-  // 重置基本信息
-  formData.student_name = '';
-  formData.class_name = '';
-  formData.student_no = '';
-  formData.talk_place = '';
+  // 重置学生列表
+  students.value = [];
+  uni.removeStorageSync('temp_students');
+  
+  // 重置表单数据
   formData.risk_level = 1;
   formData.talk_content = '';
   formData.situation_analysis = '';
@@ -826,7 +811,6 @@ function resetForm() {
   // 重置日期
   const today = new Date();
   talkDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  formData.talk_time = talkDate.value + ' 09:00:00';
 }
 
 // 提交表单
@@ -836,15 +820,10 @@ async function handleSubmit() {
   submitting.value = true;
   
   try {
-    const generatedContent = generateContent();
-    
-    const requestData = {
-      student_name: formData.student_name,
-      class_name: formData.class_name,
-      student_no: formData.student_no,
-      talk_time: formData.talk_time,
-      talk_place: formData.talk_place,
-      participants: mergeTagsAndCustom('participants'),
+    const talkTime = talkDate.value + ' 09:00:00';
+    const commonData = {
+      talk_time: talkTime,
+      participants: '',  // 参与人已移除，设为空字符串
       reason: mergeTagsAndCustom('reason'),
       form_data: {
         student_behavior: mergeTagsAndCustom('attitude'),
@@ -862,34 +841,56 @@ async function handleSubmit() {
       talk_content: formData.talk_content,
       situation_analysis: formData.situation_analysis,
       disposal_result: formData.disposal_result,
-      generated_content: generatedContent,
       record_date: talkDate.value,
     };
     
-    if (mode.value === 'edit' && recordId.value) {
-      // 更新记录
+    if (mode.value === 'edit' && recordId.value && students.value.length > 0) {
+      // 编辑模式：更新单条记录
+      const student = students.value[0];
+      const requestData = {
+        ...commonData,
+        student_name: student.student_name,
+        class_name: student.class_name,
+        student_no: student.student_no,
+        generated_content: generateContent(student),
+      };
       await updateRecord(recordId.value, requestData);
       uni.showToast({ title: '更新成功', icon: 'success' });
+      
+      // 通知列表页刷新
+      uni.$emit('refreshRecordList');
+      
+      // 返回列表页
+      setTimeout(() => {
+        uni.switchTab({ url: '/pages/record-list/index' });
+      }, 1500);
     } else {
-      // 创建记录
-      await createRecord(requestData);
-      uni.showToast({ title: '保存成功', icon: 'success' });
-    }
-    
-    // 通知列表页刷新
-    uni.$emit('refreshRecordList');
-    
-    // 返回列表页
-    setTimeout(() => {
-      if (mode.value === 'edit') {
-        uni.switchTab({ url: '/pages/record-list/index' });
-      } else {
-        resetForm(); //清空表单
-        uni.switchTab({ url: '/pages/record-list/index' });
+      // 新增模式：为每个学生创建一条记录
+      for (const student of students.value) {
+        const requestData = {
+          ...commonData,
+          student_name: student.student_name,
+          class_name: student.class_name,
+          student_no: student.student_no,
+          generated_content: generateContent(student),
+        };
+        await createRecord(requestData);
       }
-    }, 1500);
+      
+      const count = students.value.length;
+      uni.showToast({ title: `成功创建 ${count} 条记录`, icon: 'success' });
+      
+      // 通知列表页刷新
+      uni.$emit('refreshRecordList');
+      
+      // 清空表单，停留在新增页面继续录入
+      setTimeout(() => {
+        resetForm();
+      }, 1500);
+    }
   } catch (error) {
     console.error('保存失败:', error);
+    uni.showToast({ title: '保存失败', icon: 'none' });
   } finally {
     submitting.value = false;
   }
@@ -967,6 +968,15 @@ onShow(() => {
     // 清除缓存
     uni.removeStorageSync('editRecord');
   }
+  
+  // 检查是否从学生信息页面返回（读取 temp_students）
+  if (mode.value === 'add') {
+    const tempStudents = uni.getStorageSync('temp_students');
+    if (tempStudents && Array.isArray(tempStudents)) {
+      students.value = tempStudents;
+      console.log('从 Storage 读取学生列表:', tempStudents);
+    }
+  }
 });
 </script>
 
@@ -994,6 +1004,62 @@ onShow(() => {
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+/* 学生卡片区域 */
+.student-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-card {
+  min-width: 80px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e6f4ff, #f0f9ff);
+  border: 1px solid #91caff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.student-card:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, #d6e8ff, #e6f4ff);
+}
+
+.student-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1677ff;
+}
+
+.student-card.add-card {
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  color: #999;
+}
+
+.student-card.add-card:active {
+  background: #f0f0f0;
+  border-color: #bfbfbf;
+}
+
+.add-icon {
+  font-size: 24px;
+  font-weight: 300;
+  color: #999;
+  line-height: 1;
+}
+
+.add-text {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
 }
 
 .form-item {

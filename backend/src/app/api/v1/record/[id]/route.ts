@@ -18,7 +18,6 @@ interface UpdateRecordBody {
     class_name?: string;
     student_no?: string;
     talk_time?: string;
-    talk_place?: string;
     participants?: string;
     reason?: string;
     form_data?: Record<string, unknown>;
@@ -56,7 +55,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             class_name: record.className,
             student_no: record.studentNo,
             talk_time: record.talkTime,
-            talk_place: record.talkPlace,
             participants: record.participants,
             reason: record.reason,
             form_data: record.formData,
@@ -106,7 +104,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (body.class_name !== undefined) updateData.className = body.class_name;
         if (body.student_no !== undefined) updateData.studentNo = body.student_no;
         if (body.talk_time !== undefined) updateData.talkTime = new Date(body.talk_time);
-        if (body.talk_place !== undefined) updateData.talkPlace = body.talk_place;
         if (body.participants !== undefined) updateData.participants = body.participants;
         if (body.reason !== undefined) updateData.reason = body.reason;
         if (body.form_data !== undefined) updateData.formData = body.form_data;

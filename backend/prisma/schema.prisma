@@ -17,7 +17,6 @@ model TalkRecord {
   className         String    @map("class_name") @db.VarChar(50)
   studentNo         String    @map("student_no") @db.VarChar(50)
   talkTime          DateTime  @map("talk_time")
-  talkPlace         String    @map("talk_place") @db.VarChar(100)
   participants      String    @db.VarChar(200)
   reason            String    @db.VarChar(200)
   formData          Json      @map("form_data")

@@ -23,6 +23,12 @@
             "style": {
                 "navigationBarTitleText": "快捷标签"
             }
+        },
+        {
+            "path": "pages/student-info/index",
+            "style": {
+                "navigationBarTitleText": "学生信息"
+            }
         }
     ],
     "globalStyle": {

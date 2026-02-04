@@ -9,7 +9,7 @@ let BASE_URL = '/api/v1';
 // #ifdef MP-WEIXIN
 const MP_CACHED_BASE_URL = uni.getStorageSync('API_BASE_URL');
 const MP_ENV_BASE_URL = (import.meta as any).env?.VITE_MP_API_BASE_URL as string | undefined;
-BASE_URL = MP_CACHED_BASE_URL || MP_ENV_BASE_URL || 'http://192.168.0.100:3000/api/v1';
+BASE_URL = MP_CACHED_BASE_URL || MP_ENV_BASE_URL || 'http://192.168.0.102:3000/api/v1';
 // #endif
 
 export function setApiBaseUrl(url: string) {
@@ -82,7 +82,6 @@ export interface TalkRecord {
     class_name: string;
     student_no: string;
     talk_time: string;
-    talk_place: string;
     participants: string;
     reason: string;
     form_data: {
@@ -107,7 +106,6 @@ export interface CreateRecordRequest {
     class_name: string;
     student_no: string;
     talk_time: string;
-    talk_place: string;
     participants: string;
     reason: string;
     form_data: Record<string, string>;

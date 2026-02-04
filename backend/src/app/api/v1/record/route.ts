@@ -14,7 +14,6 @@ interface CreateRecordBody {
     class_name: string;
     student_no: string;
     talk_time: string;
-    talk_place: string;
     participants: string;
     reason: string;
     form_data: Record<string, unknown>;
@@ -66,7 +65,6 @@ export async function GET(request: NextRequest) {
             class_name: record.className,
             student_no: record.studentNo,
             talk_time: record.talkTime,
-            talk_place: record.talkPlace,
             participants: record.participants,
             reason: record.reason,
             form_data: record.formData,
@@ -99,7 +97,6 @@ export async function POST(request: NextRequest) {
             'class_name',
             'student_no',
             'talk_time',
-            'talk_place',
             'participants',
             'reason',
             'form_data',
@@ -119,7 +116,6 @@ export async function POST(request: NextRequest) {
                 className: body.class_name,
                 studentNo: body.student_no,
                 talkTime: new Date(body.talk_time),
-                talkPlace: body.talk_place,
                 participants: body.participants,
                 reason: body.reason,
                 formData: body.form_data as object,
